@@ -1,0 +1,580 @@
+head	1.4;
+access;
+symbols;
+locks
+	paul:1.4; strict;
+comment	@# @;
+
+
+1.4
+date	99.12.01.20.25.32;	author paul;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	99.12.01.18.59.45;	author paul;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	99.02.21.23.07.29;	author paul;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	99.02.21.21.37.02;	author paul;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@import java.applet.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.math.*;
+
+public class Cleblet extends Applet implements ActionListener, Runnable {
+    
+    Thread playing;
+    
+    // declare our A.M values out here
+    
+    BigRational j1,j2,j,m1,m2,m;
+
+    // Let's allow the user to input the numbers as reals. 
+    // a double will be just fine here.
+    double hj1,hj2,hj,hm1,hm2,hm;
+
+    
+    // the approximate answer as a 'double'
+
+    double approxanswer;
+
+    
+    // panels for the rows of GUI things:
+    
+    Panel row1 = new Panel();
+    Label instructions = new Label
+	("Enter the values of a.m. in the boxes below..",Label.CENTER);
+    Panel row2 = new Panel();
+    Label j1label = new Label("<j1=",Label.RIGHT);
+    TextField j1field = new TextField(4);
+    Label m1label = new Label("m1=",Label.RIGHT);
+    TextField m1field = new TextField(4);
+    Label j2label = new Label("j2=",Label.RIGHT);
+    TextField j2field = new TextField(4);
+    Label m2label = new Label("m2=",Label.RIGHT);
+    TextField m2field = new TextField(4);
+    Label jlabel = new Label("| j=",Label.RIGHT);
+    TextField jfield = new TextField(4);
+    Label mlabel = new Label("m=",Label.RIGHT);
+    TextField mfield = new TextField(4);
+    Label endket = new Label(">",Label.LEFT);
+    Button go = new Button("Go!");
+    Button clear = new Button("Clear");
+    Panel row3 = new Panel();
+    Panel row4 = new Panel();
+    TextField outfield = new TextField(80);
+    Label approxlabel = new Label("approx:",Label.RIGHT);
+    TextField approxfield = new TextField(40);
+    
+    
+    public void init() {
+	
+	Font myfont = new Font("Serif", Font.PLAIN, 10);
+	setFont(myfont);
+	
+	// set up the layout of the GUI
+	
+	GridLayout mylayout = new GridLayout(3,1,1,1);
+	setLayout(mylayout);
+	
+	FlowLayout layout1 = new FlowLayout(FlowLayout.CENTER, 1,1);
+	row2.setLayout(layout1);
+	row2.add(instructions);
+	//add(row2);
+	
+	FlowLayout layout2 = new FlowLayout(FlowLayout.CENTER, 1, 1);
+	row1.setLayout(layout2);
+	row1.add(j1label);
+	row1.add(j1field);
+	row1.add(m1label);
+	row1.add(m1field);
+	row1.add(j2label);
+	row1.add(j2field);
+	row1.add(m2label);
+	row1.add(m2field);
+	row1.add(jlabel);
+	row1.add(jfield);
+	row1.add(mlabel);
+	row1.add(mfield);
+	row1.add(endket);
+	row1.add(go);
+	row1.add(clear);
+	add(row1);
+	
+	FlowLayout layout3 = new FlowLayout(FlowLayout.CENTER, 1, 1);
+	row3.setLayout(layout3);
+	outfield.setEditable(false);
+	row3.add(outfield);
+	add(row3);
+	
+	FlowLayout layout4 = new FlowLayout(FlowLayout.CENTER, 1, 1);
+	row4.setLayout(layout4);
+	approxfield.setEditable(false);
+	row4.add(approxlabel);
+	row4.add(approxfield);
+	add(row4);
+	// done setting up the layout. Now add some listeners (to the buttons)
+
+	go.addActionListener(this);
+	clear.addActionListener(this);
+    }
+    
+    
+    public void actionPerformed(ActionEvent event) {
+	String command = event.getActionCommand();
+	if(command == "Go!") { 
+	    playing = new Thread(this);
+	    playing.start();
+	    go.setEnabled(false);
+	    clear.setEnabled(false);
+	    outfield.setText("");
+	}
+	if(command == "Clear") 
+	    clearAllFields();
+    }
+    
+    void clearAllFields(){
+	j1field.setText(null);
+	m1field.setText(null);
+	j2field.setText(null);
+	m2field.setText(null);
+	jfield.setText(null);
+	mfield.setText(null);
+	outfield.setText(null);
+	approxfield.setText(null);
+    }
+    
+    public void run() {
+	// This is where the thread starts.. we need to pass the values from
+	// our boxes to the Clebsch class..
+	
+	final BigRational ONE_R = new BigRational(1);
+	
+	
+	// We get the input from the input boxes and convert to the 
+	// BigInteger type.
+	// This can throw an exception if bad input is given, so let's catch
+	// it if we can..
+	
+	try {
+	    hj1 = (new java.lang.Double(j1field.getText())).doubleValue();
+	    hm1 = (new java.lang.Double(m1field.getText())).doubleValue();
+	    hj2 = (new java.lang.Double(j2field.getText())).doubleValue();
+	    hm2 = (new java.lang.Double(m2field.getText())).doubleValue();
+	    hj = (new java.lang.Double(jfield.getText())).doubleValue();
+	    hm = (new java.lang.Double(mfield.getText())).doubleValue();
+	}
+	catch (java.lang.NumberFormatException e) {
+	    outfield.setText("All input must be numerical");
+	    go.setEnabled(true);
+	    clear.setEnabled(true);
+	    return;
+	}
+
+	// convert decimal input to BigRational.
+	j1 = new BigRational(new BigInteger(Long.toString(Math.round(2.*hj1))),
+			     new BigInteger("2"));
+	m1 = new BigRational(new BigInteger(Long.toString(Math.round(2.*hm1))),
+			     new BigInteger("2"));
+	j2 = new BigRational(new BigInteger(Long.toString(Math.round(2.*hj2))),
+			     new BigInteger("2"));
+	m2 = new BigRational(new BigInteger(Long.toString(Math.round(2.*hm2))),
+			     new BigInteger("2"));
+	j = new BigRational(new BigInteger(Long.toString(Math.round(2.*hj))),
+			     new BigInteger("2"));
+	m = new BigRational(new BigInteger(Long.toString(Math.round(2.*hm))),
+			     new BigInteger("2"));
+	
+	// There is a delta function on the m-values - so we catch this one
+	// early on:
+	
+	if ( ! ((m1.add(m2)).equals(m)) ) {
+	    outfield.setText("m1+m2 must equal m");
+	    go.setEnabled(true);
+	    clear.setEnabled(true);
+	    return;
+	}
+	
+	// Another problem with the input would be if any of the m's have a
+	// bigger magnitude than their j.
+	
+	if ( Math.abs(hm1) > hj1) {
+	    outfield.setText("|m1| must be less than, or equal to  j1");
+	    go.setEnabled(true);
+	    clear.setEnabled(true);      
+	    return;
+	}
+	if ( Math.abs(hm2) > hj2 ) {
+	    outfield.setText("|m2| must be less than, or equal to  j2");
+	    go.setEnabled(true);
+	    clear.setEnabled(true);      
+	    return;
+	}
+	if ( Math.abs(hm) > hj ) {
+	    outfield.setText("|m| must be less than, or equal to  j");
+	    go.setEnabled(true);
+	    clear.setEnabled(true);      
+	    return;
+	}
+	
+	// also, each of the values 2m must have the same parity as their
+	// corresponding 2j, for physical reasons.
+	
+	if (Math.abs(Math.abs(hm1-hj1)-Math.round(Math.abs(hm1-hj1)))>0.0001 ){
+	    outfield.setText("m1="+m1field.getText()+
+			     " is not consistent with j1="+j1field.getText());
+	go.setEnabled(true);
+	clear.setEnabled(true);      
+	return;
+	}
+	if (Math.abs(Math.abs(hm2-hj2)-Math.round(Math.abs(hm2-hj2)))>0.0001){
+	    outfield.setText("m2="+m2field.getText()+
+			     " is not consistent with j2="+j2field.getText());
+	    go.setEnabled(true);
+	    clear.setEnabled(true);      
+	    return;
+	}
+	if (Math.abs(Math.abs(hm-hj)-Math.round(Math.abs(hm-hj)))>0.0001 ) {
+	    outfield.setText("m="+mfield.getText()+
+			     " is not consistent with j="+jfield.getText());
+	    go.setEnabled(true);
+	    clear.setEnabled(true);      
+	    return;
+	}
+	
+	// and finally... the j's must satisfy the triangle relations..
+	
+	if(Math.abs(hj1-hj2) > hj || Math.abs(hj1+hj2) < hj) {
+	    outfield.setText("j1, j2 and j do not satisfy the triangle"+
+			     " relation");
+	    go.setEnabled(true);
+	    clear.setEnabled(true);      
+	    return;
+	}
+	
+	//
+	//  We get this far if we pass all the tests for suitability of
+	// input parameters. Now nothing can go wrong :-)
+	//
+	
+	
+	// now we must calculate the fraction delta(j1,j2,j)^2
+	BigRational delta = new 
+	    BigRational(factorial( (j1.add(j2)).subtract(j).toBigInteger() ),
+			factorial( (((j1.add(j2)).add(j)).add(ONE_R)
+				    ).toBigInteger() ) );
+	delta=delta.multiply(factorial(j1.add(j).subtract(j2).toBigInteger()));
+	delta=delta.multiply(factorial(j2.add(j).subtract(j1).toBigInteger()));
+	
+	// There are also a bunch of factors sitting outside the 
+	// sum which must be calculated.
+	BigInteger outfactors = 
+	    factorial(j1.add(m1).toBigInteger())
+	    .multiply( factorial(j1.subtract(m1).toBigInteger()) )
+	    .multiply( factorial(j2.add(m2).toBigInteger()))
+	    .multiply( factorial(j2.subtract(m2).toBigInteger()) )
+	    .multiply( factorial(j.add(m).toBigInteger()) )
+	    .multiply( factorial(j.subtract(m).toBigInteger()))
+	    .multiply( (j.add(j)).add(ONE_R) .toBigInteger() );
+	// Now we can do the sum. Happy Happy Joy Joy.
+	BigInteger t1 = j1.subtract(m1).toBigInteger();
+	BigInteger t2 = j.add(m1).subtract(j2).toBigInteger();
+	BigInteger t3 = j2.add(m2).toBigInteger();
+	BigInteger t4 = (j.subtract(j1)).subtract(m2).toBigInteger();
+	BigInteger t5 = j1.add(j2).subtract(j).toBigInteger();
+
+	BigInteger nulo = new BigInteger("0");
+	if(nulo.compareTo(t2.negate()) < 0) nulo = t2.negate();
+	if(nulo.compareTo(t4.negate()) < 0) nulo = t4.negate();
+	BigInteger nuhi = t1;
+	if(nuhi.compareTo(t3) > 0) nuhi = t3;
+	if(nuhi.compareTo(t5) > 0) nuhi = t5;
+
+	// now we are ready to perform the sum. Ugh.
+	
+	BigRational sumvar = new BigRational(0);
+	float pcdone = 0.0f;
+	int range = (nuhi.subtract(nulo)).intValue();
+	float pcpernu = 100.0f/(float) range;
+	
+	
+	for (BigInteger nu = nulo; nu.compareTo(nuhi)<=0;
+	     nu=nu.add(new BigInteger("1"))) {
+	    
+	    if(range >=10) {
+		outfield.setText("Thinking.."+
+				 java.lang.Integer.toString((int)pcdone)+
+				 "% done.");
+		pcdone += pcpernu;
+	    }
+	    
+	    if(nu.mod(new BigInteger("2")).compareTo(new BigInteger("0")
+						     ) == 0) {
+		sumvar=sumvar.
+		    add(new BigRational(new 
+					BigInteger("1"),
+					factorial(t1.subtract(nu)
+						  ).multiply(factorial(t2.
+								       add(nu))
+							     ).
+					multiply(factorial(t3.subtract(nu))
+						 ).
+					multiply(factorial(t4.add(nu))
+						 ).
+					multiply(factorial(t5.subtract(nu))
+						 ).multiply(factorial(nu))));
+	    }
+	    else
+		sumvar=sumvar.
+		    subtract( new BigRational(new BigInteger("1"),
+					      factorial(t1.subtract(nu)
+							).
+					      multiply(factorial(t2.add(nu))
+						       ).
+					      multiply(factorial(t3.
+								 subtract(nu))
+						       ).
+					      multiply(factorial(t4.add(nu))
+						       ).
+					      multiply(factorial(t5.
+								 subtract(nu))
+						       ).
+					      multiply(factorial(nu))));
+	}	
+	
+	// Now we have everything and we just need to do a little 
+	// manipulation for output.
+
+	boolean isneg=false;
+	if(sumvar.numerator.compareTo(new BigInteger("0"))<0) isneg=true;
+
+	BigRational inside = sumvar.multiply(sumvar).
+	    multiply(delta).multiply(outfactors);
+	outfield.setText("Simplifying Expression");
+	BigInteger denomfactors = squarefactor(inside.denominator);
+	BigInteger numerfactors = squarefactor(inside.numerator);
+
+	inside = (inside.divide(numerfactors.multiply(numerfactors))).
+	    multiply(denomfactors.multiply(denomfactors));
+
+	BigRational outside = new BigRational(1);
+	outside = (outside.multiply(numerfactors)).divide(denomfactors);
+
+	
+	// get an approximate (decimal) expression for an answer:
+
+	BigDecimal bigapprox = (new BigDecimal(inside.numerator)).
+	    setScale(35);
+	bigapprox = bigapprox.divide((new BigDecimal(inside.denominator)).
+				     setScale(35),BigDecimal.ROUND_HALF_DOWN);
+	approxanswer = java.lang.Math.sqrt(bigapprox.doubleValue());
+		   
+	bigapprox = (new BigDecimal(outside.numerator)).setScale(35);
+	bigapprox = bigapprox.divide((new BigDecimal(outside.denominator)).
+				     setScale(35),BigDecimal.ROUND_HALF_DOWN);
+
+	approxanswer = approxanswer * bigapprox.doubleValue();
+
+	approxfield.setText("");
+	if(isneg==true) approxfield.setText("-");
+	approxfield.setText(approxfield.getText()+
+			    java.lang.Double.toString(approxanswer));
+
+
+	// print out the analytic answer
+
+	outfield.setText("");
+	
+	if(isneg==true) outfield.setText("-");
+	if(inside.numerator.compareTo(new BigInteger("0"))==0) {
+	    outfield.setText("0");} 
+	else { 
+	    if(outside.equals(ONE_R) == false) {
+		outfield.setText(outfield.getText()+"("+
+				 outside.toString()+")*"); }
+	    if (inside.equals(ONE_R)==false) {
+		outfield.setText(outfield.getText()+"sqrt("+
+				 inside.toString()+")");}}
+	go.setEnabled(true);
+	clear.setEnabled(true);
+    }
+    
+    //
+    // Here follows the factorial method (function) for BigIntegers. 
+    // It is a class method, so must be static.
+    //
+
+    public static BigInteger factorial(BigInteger a) {
+	if (a.compareTo(new BigInteger("0"))<0) 
+	    return new BigInteger("0"); 
+	if (a.compareTo(new BigInteger("0"))==0 ||
+	    a.compareTo(new BigInteger("1"))==0) {
+	    return new BigInteger("1");
+	}
+	else {
+	    return a.multiply(factorial(a.subtract(new BigInteger("1"))));
+	}
+    }    // end of factorial method
+
+    // 
+    // A method to simplify sqrt(I) where I is a BigInteger, by checking
+    // I for factors which are perfect squares.
+    //
+    
+    public static BigInteger squarefactor(BigInteger a) {
+	BigInteger i = new BigInteger("2");
+	BigInteger result = new BigInteger("1");
+	while(i.multiply(i).compareTo(a.min(new BigInteger("10000000")))<=0) {
+	    if ( a.mod(i.multiply(i)).compareTo(new BigInteger("0"))==0) {
+		return (i.multiply(squarefactor(a.divide(i.multiply(i))))); }
+	    i = i.add(new BigInteger("1"));
+	}
+	return result;
+    }
+}
+
+@
+
+
+1.3
+log
+@Paul Stevenson 1/12/99
+Fixed sign of approximate output
+@
+text
+@d360 1
+@
+
+
+1.2
+log
+@Initial version
+Known bugs:
+. For really really big arguments, the approximate answer will be zero because
+we are dividing two enormous numbers to get something very small and suffering
+underflow. This ought to be fixable without too much effort.
+. Also for large arguments some bytecode interpreters choke on the size of the
+"arbitrary length" integers which are generated. While this is not really my
+fault, algorithms do exist which keep the size of the integers down a bit
+(using binomial coefficients rather then factorials)
+. The simplification which is done to the expression at the end does not
+simplify as far as it could. This is to save time. The simplification is an
+essentially cosmetic feature.  For 'sensibly' small arguments the answer is
+simplified completely.
+@
+text
+@d360 3
+a362 1
+	approxfield.setText(java.lang.Double.toString(approxanswer));
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d13 5
+d30 1
+a30 1
+    Label j1label = new Label("<2j1=",Label.RIGHT);
+d32 1
+a32 1
+    Label m1label = new Label("2m1=",Label.RIGHT);
+d34 1
+a34 1
+    Label j2label = new Label("2j2=",Label.RIGHT);
+d36 1
+a36 1
+    Label m2label = new Label("2m2=",Label.RIGHT);
+d38 1
+a38 1
+    Label jlabel = new Label("| 2j=",Label.RIGHT);
+d40 1
+a40 1
+    Label mlabel = new Label("2m=",Label.RIGHT);
+d142 6
+a147 12
+	    j1 = new BigRational(new BigInteger(j1field.getText()),
+				 new BigInteger("2"));
+	    m1 = new BigRational(new BigInteger(m1field.getText()),
+				 new BigInteger("2"));
+	    j2 = new BigRational(new BigInteger(j2field.getText()),
+				 new BigInteger("2"));
+	    m2 = new BigRational(new BigInteger(m2field.getText()),
+				 new BigInteger("2"));
+	    j = new BigRational(new BigInteger(jfield.getText()),
+				new BigInteger("2"));
+	    m = new BigRational(new BigInteger(mfield.getText()),
+				new BigInteger("2"));
+d150 1
+a150 1
+	    outfield.setText("All input must be in the form of integers");
+d155 14
+d183 1
+a183 2
+	if ( ( new BigInteger(m1field.getText())
+	       ).abs().compareTo( new BigInteger(j1field.getText())) > 0) {
+d189 1
+a189 2
+	if ( ( new BigInteger(m2field.getText())
+	       ).abs().compareTo( new BigInteger(j2field.getText())) > 0) {
+d195 1
+a195 2
+	if ( ( new BigInteger(mfield.getText())
+	       ).abs().compareTo( new BigInteger(jfield.getText())) > 0) {
+d205 1
+a205 4
+	if ( (((new BigInteger(m1field.getText())
+		).add(new BigInteger(j1field.getText()))
+	       ).mod(new BigInteger("2")) 
+	      ).compareTo(new BigInteger("1")) ==0) {
+d208 3
+a210 3
+	    go.setEnabled(true);
+	    clear.setEnabled(true);      
+	    return;
+d212 1
+a212 4
+	if ( (((new BigInteger(m2field.getText())
+		).add(new BigInteger(j2field.getText()))
+	       ).mod(new BigInteger("2")) 
+	      ).compareTo(new BigInteger("1")) ==0) {
+d219 1
+a219 4
+	if ( (((new BigInteger(mfield.getText())
+		).add(new BigInteger(jfield.getText()))
+	       ).mod(new BigInteger("2")) 
+	      ).compareTo(new BigInteger("1")) ==0 ) {
+d229 1
+a229 9
+	if(((new BigInteger(j1field.getText())
+	     ).add(new BigInteger(j2field.getText()))
+	    ).compareTo(new BigInteger(jfield.getText())
+			) < 0 || (((new BigInteger(j1field.getText())
+				    ).subtract(new 
+					       BigInteger(j2field.getText()))
+				   ).abs()
+				  ).compareTo(new BigInteger(jfield.getText())
+					      ) > 0 ) {
+@
